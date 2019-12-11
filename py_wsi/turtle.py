@@ -1,10 +1,7 @@
 """
-
 Main py-wsi manager, Turtle, which keeps track of a collection of SVS images, and allows for
 patch sampling, storing, and accessing. 
-
 Author: @ysbecca
-
 """
 import itertools
 import math
@@ -77,7 +74,6 @@ class Turtle(object):
             - file_name         the whole slide image filename
             - patch_size        patch size in pixels
             - tile_size         tile size in pixels
-
             Returns:
             - level count
             - level tiles
@@ -209,7 +205,7 @@ class Turtle(object):
             if self.num_files != num_xml_files:
                 print("[py-wsi error]: requested to read XML annotations but number of XML files", num_xml_files,
                     "does not match number of .svs files", self.num_files)
-                return
+                #return
         if overlap < 0:
             print("[py-wsi error]: negative overlap not allowed.")
             return
@@ -258,7 +254,7 @@ class Turtle(object):
     #                General class helper functions                           #
     ###########################################################################
 
-    def __get_files_from_dir(self, file_dir, file_type='.svs'):
+    def __get_files_from_dir(self, file_dir, file_type='.mrxs'):
         """ Returns the names of all the SVS image files in the provided directory. 
         """
         return np.array([file for file in listdir(file_dir) 
@@ -382,7 +378,6 @@ class Turtle(object):
         """
         total_count = 0
         for file in self.files:
-            print(file, end=" ")
             patch_count = sample_and_store_patches(
                                 file,
                                 self.file_dir,

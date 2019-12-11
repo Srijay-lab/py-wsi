@@ -1,9 +1,6 @@
 '''
-
 Various helper functions.
-
 Author: @ysbecca
-
 '''
 
 import time

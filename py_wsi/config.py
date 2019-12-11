@@ -1,7 +1,5 @@
 """
-
 Configuration parameters for package.
-
 Author @ysbecca
 """
 

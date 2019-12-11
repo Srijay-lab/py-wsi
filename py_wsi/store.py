@@ -1,11 +1,8 @@
 '''
-
 These functions take patches and meta data as input and store them in the specified format.
-
 Author: @ysbecca
-
-
 '''
+import csv
 import csv
 import time
 import h5py
@@ -102,7 +99,7 @@ def save_to_hdf5(db_location, patches, coords, file_name, labels):
 ###########################################################################
 
 def save_to_disk(db_location, patches, coords, file_name, labels):
-    """ Saves numpy patches to .png files (full resolution). 
+    """ Saves numpy patches to .png files (full resolution).
         Meta data is saved in the file name.
         - db_location       folder to save images in
         - patches           numpy images
@@ -114,7 +111,6 @@ def save_to_disk(db_location, patches, coords, file_name, labels):
     for i, patch in enumerate(patches):
         # Construct the new PNG filename
         patch_fname = file_name + "_" + str(coords[i][0]) + "_" + str(coords[i][1]) + "_"
-
         if save_labels:
             patch_fname += str(labels[i])
 
