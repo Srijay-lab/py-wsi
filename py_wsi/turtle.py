@@ -182,7 +182,7 @@ class Turtle(object):
 
     def sample_and_store_patches(self,
                                  patch_size,
-                                 level,
+                                 magnification,
                                  overlap,
                                  load_xml=False,
                                  limit_bounds=True,
@@ -215,12 +215,12 @@ class Turtle(object):
             xml_dir = self.xml_dir
 
         if self.storage_type == 'hdf5':
-            self.__sample_store_hdf5(patch_size, level, overlap, xml_dir, limit_bounds, rows_per_txn)
+            self.__sample_store_hdf5(patch_size, magnification, overlap, xml_dir, limit_bounds, rows_per_txn)
         elif self.storage_type == 'disk':
-            self.__sample_store_disk(patch_size, level, overlap, xml_dir, limit_bounds, rows_per_txn)
+            self.__sample_store_disk(patch_size, magnification, overlap, xml_dir, limit_bounds, rows_per_txn)
         else:
             # LMDB by default.
-            self.__sample_store_lmdb(patch_size, level, overlap, xml_dir, limit_bounds, rows_per_txn)
+            self.__sample_store_lmdb(patch_size, magnification, overlap, xml_dir, limit_bounds, rows_per_txn)
 
         end_timer(start_time)
 
@@ -310,7 +310,7 @@ class Turtle(object):
         return patches, coords, classes, labels
 
 
-    def __sample_store_hdf5(self, patch_size, level, overlap, xml_dir, limit_bounds, rows_per_txn):
+    def __sample_store_hdf5(self, patch_size, magnification, overlap, xml_dir, limit_bounds, rows_per_txn):
         """ Same parameters as sample_and_store_patches().
         """
         total_count = 0
@@ -321,7 +321,7 @@ class Turtle(object):
                                 self.file_dir,
                                 overlap,
                                 patch_size=patch_size,
-                                level=level,
+                                magnification=magnification,
                                 xml_dir=xml_dir,
                                 label_map=self.label_map,
                                 limit_bounds=limit_bounds,
@@ -373,24 +373,16 @@ class Turtle(object):
         return patches, coords, classes, labels
 
 
-    def __sample_store_disk(self, patch_size, level, overlap, xml_dir, limit_bounds, rows_per_txn):
+    def __sample_store_disk(self, patch_size, magnification, overlap, xml_dir, limit_bounds, rows_per_txn):
         """ Same parameters as sample_and_store_patches().
         """
         total_count = 0
         for file in self.files:
-            patch_count = sample_and_store_patches(
-                                file,
-                                self.file_dir,
-                                overlap,
-                                patch_size=patch_size,
-                                level=level,
-                                xml_dir=xml_dir,
-                                label_map=self.label_map,
-                                limit_bounds=limit_bounds,
-                                rows_per_txn=rows_per_txn,
-                                db_location=self.db_location,
-                                prefix=self.db_name,
-                                storage_option='disk')
+            patches = sample_and_store_patches(file, self.file_dir, overlap, patch_size=patch_size,
+                                               magnification=magnification, xml_dir=xml_dir, label_map=self.label_map,
+                                               limit_bounds=limit_bounds, rows_per_txn=rows_per_txn,
+                                               db_location=self.db_location, prefix=self.db_name, storage_option='disk')
+            patch_count = patches
 
             # Don't stop if one image fails.
             if patch_count <= 0:
@@ -438,16 +430,19 @@ class Turtle(object):
             labels = []
         return patches, coords, classes, labels
 
-    def __calculate_map_size(self, patch_size, level, overlap, limit_bounds):
+    def __calculate_map_size(self, patch_size, magnification, overlap, limit_bounds):
         """ Pre-calculates the LMDB map size for a database given the files.
         """
         total_bytes = 0
         total_meta_bytes = 0
 
+
         for file in self.files:
             slide = open_slide(self.file_dir + file)
             tile_size = patch_to_tile_size(patch_size, overlap)
             tiles = DeepZoomGenerator(slide, tile_size=tile_size, overlap=overlap, limit_bounds=limit_bounds)
+
+            level = tiles.level_count - int(math.log((40/magnification),2)) - 1
 
             # Count total number of tiles.
             x_tiles, y_tiles = tiles.level_tiles[level]
@@ -460,7 +455,7 @@ class Turtle(object):
 
         return total_bytes, total_meta_bytes
 
-    def __sample_store_lmdb(self, patch_size, level, overlap, xml_dir, limit_bounds, rows_per_txn):
+    def __sample_store_lmdb(self, patch_size, magnification, overlap, xml_dir, limit_bounds, rows_per_txn):
         """ Samples patches and saves them in LMDB. Parameters from sample_and_store_patches():
             - patch_size, level, overlap, limit_bounds, rows_per_txn.
         """
@@ -468,7 +463,7 @@ class Turtle(object):
         # First iteration to calculate exactly the size of the DB.
         # To deal with very large databases, it is suggested to save k databases, one for each 
         # k-fold cross validation set.
-        map_size, meta_map_size = self.__calculate_map_size(patch_size, level, overlap, limit_bounds)
+        map_size, meta_map_size = self.__calculate_map_size(patch_size, magnification, overlap, limit_bounds)
         print("Pre-calculated map sizes:")
         print(" - patch db:    ", map_size, "bytes")
         print(" - meta db:     ", meta_map_size, "bytes")
@@ -488,7 +483,7 @@ class Turtle(object):
                                 env=env,
                                 meta_env=meta_env,
                                 patch_size=patch_size,
-                                level=level,
+                                magnification=magnification,
                                 xml_dir=xml_dir,
                                 label_map=self.label_map,
                                 limit_bounds=limit_bounds,

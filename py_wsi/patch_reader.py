@@ -13,6 +13,7 @@ from glob import glob
 from xml.dom import minidom
 from shapely.geometry import Polygon, Point
 import os
+import math
 
 from .store import *
 
@@ -74,7 +75,7 @@ def sample_and_store_patches(file_name,
                              env=False,
                              meta_env=False,
                              patch_size=512,
-                             level=0,
+                             magnification=10,
                              xml_dir=False,
                              label_map={},
                              limit_bounds=True,
@@ -113,6 +114,9 @@ def sample_and_store_patches(file_name,
         else:
             print("XML file for ",file_name," doesn't exists so returning")
             return 0
+
+
+    level = tiles.level_count - int(math.log((40/magnification),2)) - 1
 
     if level >= tiles.level_count:
         print("[py-wsi error]: requested level does not exist. Number of slide levels: " + str(tiles.level_count))
